@@ -1,5 +1,5 @@
 <p align="center">
-  <img width='650' src='https://github.com/ashleystephenson/APTitude/blob/main/imgs/selex-process.png' alt='SELEX Lifecycle'/>
+  <img width='650' src='https://github.com/ashleystephenson/APTitude/blob/master/imgs/selex-process.png' alt='SELEX Lifecycle'/>
 </p>
 
 # APTitude
@@ -47,15 +47,13 @@ Feel free to ask us questions on GitHub ([Ashley](https://github.com/ashleysteph
 
 <br/>
 <p align="center">
-  <img width='600' src='https://github.com/ashleystephenson/APTitude/blob/main/imgs/random-img.jpg' alt='Random Digit'/>
-</p><br/>
-
+  <img width='600' src='https://github.com/ashleystephenson/APTitude/blob/master/out/v1/aptitude-model-cost-plot.png' alt='Classification Test'/>
+</p>
 <p align="center">
-  <img width='600' src='https://github.com/ashleystephenson/APTitude/blob/main/imgs/errors-and-times.jpg' alt='Training & Validation Errors'/>
-</p><br/>
-
+  <img width='600' src='https://github.com/ashleystephenson/APTitude/blob/master/out/v1/aptitude-model-error-plot.png' alt='Classification Test'/>
+</p>
 <p align="center">
-  <img width='600' src='https://github.com/ashleystephenson/APTitude/blob/main/imgs/classification.jpg' alt='Classification Test'/>
+  <img width='600' src='https://github.com/ashleystephenson/APTitude/blob/master/out/v1/aptitude-model-accuracy-plot.png' alt='Classification Test'/>
 </p>
 <br/><br/>
 
