@@ -29,21 +29,22 @@ This repository contains several working Deep Learning models for tasks related 
 ## Installation
 ```
   git clone https://github.com/ashleystephenson/APTitude.git
+  cd /path/to/APTitude
+  python aptitude.py
 ```
 <br/>
 
 ## Usage
 Navigate to the directory of the model you would like to test. Edit the hyperparameters to experiment with finding optimal values for accuracy and quick convergence. The program will:
 
+# Model Operation 
 1. Load the target dataset.
-2. Split it into "training," "validation," and "testing" sets.
-3. Display or print a random example from the target training set.
-4. Train the model, recording the histories for model cost, training and test accuracy, and training duration.
-5. Display a plot of the histories recorded from step 4.
-6. Display an example from the test set, along with it's classification and label.
-7. End.
+2. Split it into encoded "training" and "testing" sets.
+3. Train the model, recording the histories for model cost, training and test accuracy, and training error.
+4. Save histories to disk.
+5. End.
 
-Feel free to ask us questions on GitHub ([Ashley](https://github.com/ashleystephenson) & [Johnathan](https://github.com/chivington))
+Feel free to ask me questions on GitHub [Ashley](https://github.com/ashleystephenson)
 
 <br/>
 <p align="center">
@@ -60,7 +61,6 @@ Feel free to ask us questions on GitHub ([Ashley](https://github.com/ashleysteph
 
 ## Authors
 * **Ashley Stephenson:** [GitHub](https://github.com/ashleystephenson)
-* **Johnathan Chivington:** [GitHub](https://github.com/chivington)
 
 ## Contributing
 Not currently accepting outside contributors, but feel free to use as you wish.
