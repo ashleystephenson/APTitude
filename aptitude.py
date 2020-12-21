@@ -14,7 +14,7 @@ np.set_printoptions(precision=5)
 
 # import data
 def import_data(seq_data, threshold):
-    print(f" Importing SELEX data - {seq_data}")
+    print(f"  Importing SELEX data - {seq_data}")
     path = './data'
     with open(path + seq_data, newline='') as csvfile:
         data = list(csv.reader(csvfile, delimiter=' ', quotechar='|'))[1:-1]
@@ -60,37 +60,40 @@ def combine_seq_rounds(files, threshold):
     print(f"\n Combining SELEX data...")
     return seqs, labels
 
-def create_experiment(name, hyperparams):
-    print(f'\n Creating experiment "{name}" hyperparameters - {hyperparams}')
-    prnt, epochs, alpha, lamb, train_size, threshold, l1, lb, ub = hyperparams
+def create_experiment(experiment_params, i):
+    prnt, epochs, alpha, lamb, train_size, threshold, l1, b, name = experiment_params
     return {
-        "prnt": prnt,               # how frequently to display cost, acc & error
-        "epochs": epochs,           # number of gradient descent iterations
-        "alpha": alpha,             # learning rate
-        "lamb": lamb,               # regularization rate
-        "train_size": train_size,   # dataset train/test ratio
-        "threshold": threshold,     # sequencing read-count threshold for binding affinity classification
-        "l1": l1,                   # width of layer 1
-        "lb": lb,                   # lower bound for correct classification
-        "ub": ub                    # upper bound for correct classification
+        "name": f'v{i}-{name}',          # experiment name
+        "prnt": prnt,                   # how frequently to display cost, acc & error
+        "hyperparams": {
+            "epochs": epochs,           # number of gradient descent iterations
+            "alpha": alpha,             # learning rate
+            "lamb": lamb,               # regularization rate
+            "train_size": train_size,   # dataset train/test ratio
+            "threshold": threshold,     # sequencing read-count threshold for binding affinity classification
+            "l1": l1,                   # width of layer 1
+            "b": b                      # boundary for correct classification
+        }
     }
 
-def save_experiment(experiment_data, name):
-    if not os.path.exists(f'./out/{name}'): os.makedirs(f'./out/{name}')
-    out_path = f'./out/{name}/aptitude-model-results.txt'
+def save_experiment(experiment_data):
+    if not os.path.exists(f'./out/{experiment_data["name"]}'): os.makedirs(f'./out/{experiment_data["name"]}')
+    out_path = f'./out/{experiment_data["name"]}/aptitude-model-results.txt'
     print(f'\n Writing experiment data to disk - {out_path}')
     f = open(out_path, 'w+')
-    f.write(f'# --- EXPERIMENT HYPERPARAMETERS {name} --- #')
+    f.write(f'# --- APTitude Experimental Analytics Report ({experiment_data["name"]}) --- #')
+    f.write(f'\n\n# --- EXPERIMENT HYPERPARAMETERS --- #')
     [f.write(f'\n{param[1]}: {experiment_data["hyperparams"][param[1]]}') for param in enumerate(experiment_data["hyperparams"])]
-    f.write(f'\n\n# --- LEARNED MODEL PARAMETERS {name} --- #')
+    f.write(f'\n\n# --- LEARNED MODEL PARAMETERS --- #')
     [f.write(f'\n\n{layer[1]}: \n{experiment_data["learned_params"][layer[1]]}') for layer in enumerate(experiment_data["learned_params"])]
-    f.write(f'\n\n# --- EXPERIMENT COST, ACC. & ERROR HISTORY {name} --- #')
+    f.write(f'\n\n# --- EXPERIMENT COST, ACC. & ERROR HISTORY --- #')
     [f.write(f'\n\n{history[1]}: \n{experiment_data["history"][history[1]]}') for history in enumerate(experiment_data["history"])]
     f.close()
 
-def run_experiment(Model, hyperparams, name):
-    print(f'\n Running experiment "{name}" - {hyperparams}')
-    prnt, epochs, alpha, lamb, train_size, threshold, l1, lb, ub = hyperparams.values()
+def run_experiment(Model, experiment_data):
+    epochs, alpha, lamb, train_size, threshold, l1, b = experiment_data["hyperparams"].values()
+    name, prnt = experiment_data["name"], experiment_data["prnt"]
+    print(f'\n Running experiment "{name}" - {experiment_data["hyperparams"]}')
 
     # import SELEX data
     files = [
@@ -124,29 +127,23 @@ def run_experiment(Model, hyperparams, name):
 
     # train models
     model = Model(alpha, lamb, epochs, [m_train, n_train, l1])
-    hist = model.train(X_train, Y_train, m_train, n_train, lb, ub, prnt)
+    hist = model.train(X_train, Y_train, m_train, n_train, b, prnt)
 
     # test model
     Z1, A1, Z2, A2 = model.compute_activations(X_test)
-    cost, acc, err = model.test(Y_test, A2, lb, ub)
-    print(f"\n Final Evaluation of Training Performance\n cost: {np.round(cost, 5)}  acc: {np.round(acc, 5)}%\n")
+    cost, acc, err = model.test(Y_test, A2, b)
+    print(f"\n Final Evaluation of Testing Performance\n cost: {np.round(cost, 5)}  acc: {np.round(acc, 5)}%\n")
 
     # plot cost and accuracy
-    plot_data(hist[0], 'Cost During Training', 'Epochs', 'Cost', name)
-    plot_data(hist[1], 'Accuracy During Training', 'Epochs', 'Accuracy', name)
-    plot_data(hist[2], 'Error During Training', 'Epochs', 'Error', name)
+    plot_data(hist[0], 'Cost During Training', 'Epochs', 'Cost', experiment_data["name"])
+    plot_data(hist[1], 'Accuracy During Training', 'Epochs', 'Accuracy', experiment_data["name"])
+    plot_data(hist[2], 'Error During Training', 'Epochs', 'Error', experiment_data["name"])
 
     # write plots & learned params to disk
-    expirment_data = {
-        "hyperparams": hyperparams,
-        "learned_params": model.params,
-        "history": {
-            "cost": hist[0],
-            "accuracy": hist[1],
-            "error": hist[2],
-        }
-    }
-    save_experiment(expirment_data, name)
+    experiment_data["learned_params"] = model.params
+    experiment_data["history"] = { "cost": hist[0], "accuracy": hist[1], "error": hist[2] }
+    save_experiment(experiment_data)
+    return np.average(hist[2]) / np.max(hist[2]), np.max(hist[2]) - np.max(np.min(hist[2]), 0)
 
 
 # i/o utils
@@ -160,6 +157,7 @@ def plot_data(data, title, x_label, y_label, name):
     fig.legend(frameon=True, borderpad=0.5, facecolor='#fff', framealpha=1, edgecolor='#777', shadow=True)
     if not os.path.exists(f'./out/{name}'): os.makedirs(f'./out/{name}')
     plt.savefig(f'./out/{name}/aptitude-model-{y_label.lower()}-plot.png')
+    plt.close("all")
 
 def greet():
     if (os.name == 'posix'): os.system("clear")
@@ -208,20 +206,22 @@ class APTitude():
         }
         print(f'  W1: {self.params["W1"].shape}  -  W2: {self.params["W2"].shape}')
 
-    def train(self, X, Y, m, n, lb, ub, prnt):
+    def train(self, X, Y, m, n, b, prnt):
+        print(f'\n  Beginning Gradient Descent - {self.epochs} epochs')
         hist = np.zeros([3, self.epochs])
-        for e in range(self.epochs):
-            if (e%prnt==0): print(f"\n Starting Epoch: {e}")
+        e = 0
+        while e < self.epochs:
+            if (e%prnt==0): print(f"\n  Starting Epoch: {e}")
             Z1, A1, Z2, A2 = self.compute_activations(X)
             dEW2, dEW1 = self.compute_gradients(Y, X, Z1, A1, Z2, A2)
             self.update_params(dEW2, dEW1, m)
-            cost, acc, err = self.test(Y, A2, lb, ub)
+            cost, acc, err = self.test(Y, A2, b)
             hist[0, e], hist[1,e], hist[2,e] = cost, acc, err
-            if (e%prnt==0): print(f" cost: {np.round(hist[0,e],4)}  acc: {np.round(hist[1,e],4)}%")
+            if (e%prnt==0): print(f"   cost: {np.round(hist[0,e],4)}  acc: {np.round(hist[1,e],4)}%")
+            e += 1
         return hist
 
     def compute_activations(self, A0):
-        # print(f' Computing activations...')
         Z1 = linear(A0, self.params["W1"])
         A1 = sigmoid(Z1)
         Z2 = linear(A1, self.params["W2"])
@@ -229,7 +229,6 @@ class APTitude():
         return Z1, A1, Z2, A2
 
     def compute_gradients(self, Y, A0, Z1, A1, Z2, A2):
-        # print(f' Computing gradients...')
         dEA2 = -(Y-A2)
         dA2Z2 = dSigmoid(A2)
         dZ2W2 = A1
@@ -242,7 +241,6 @@ class APTitude():
         dZ1W1 = A0
         dZ1A0 = self.params["W1"]
         dEW1 = dZ1W1.T.dot(dEZ1)
-        # print(f'\n')
         return dEW2, dEW1
 
     def update_params(self, dw2, dw1, m):
@@ -250,10 +248,9 @@ class APTitude():
         self.params["W1"] -= dw1 * self.alpha + reg * self.lamb
         self.params["W2"] -= dw2 * self.alpha + reg * self.lamb
 
-    def test(self, Y, A2, lb, ub):
-        # print(f' Computing cost & accuracy...')
+    def test(self, Y, A2, b):
         cost = self.cost(Y, A2)
-        acc = self.accuracy(Y, A2, lb, ub)
+        acc = self.accuracy(Y, A2, b)
         err = self.error(Y, A2)
         return cost, acc, err
 
@@ -268,9 +265,9 @@ class APTitude():
         cost = np.average(ylyh + nylnyh) * -1
         return cost
 
-    def accuracy(self, Y, A2, lb, ub):
-        A2[A2<lb] = 0
-        A2[A2>ub] = 1
+    def accuracy(self, Y, A2, b):
+        A2[A2<b] = 0
+        A2[A2>b] = 1
         eq = Y[Y==A2]
         m = Y.shape[0]
         correct = np.sum(eq)
@@ -283,13 +280,31 @@ def main(args):
     # clear screen & display application info
     greet()
 
-    # define hyperparameters for multiple experiments
-    experiment1 = create_experiment('v1', [np.floor(10000/10), 10000, 0.001, 0.001, 0.95, 5500, 25, 0.2, 0.8])
-    run_experiment(APTitude, experiment1, 'v1')
+    # define hyperparameters & run multiple experiments
+    experiments = [
+        [50000/10, 50000, 0.0001, 0.001, 0.90, 7000, 25, 0.8, 'baseline'],
+        [50000/10, 50000, 0.00001, 0.001, 0.90, 7000, 25, 0.8, 'low-learning-rate'],
+        [50000/10, 50000, 0.001, 0.001, 0.90, 7000, 25, 0.8, 'high-learning-rate'],
+        [50000/10, 50000, 0.0001, 0.0001, 0.90, 7000, 25, 0.8, 'low-regularization-rate'],
+        [50000/10, 50000, 0.0001, 0.01, 0.90, 7000, 25, 0.8, 'high-regularization-rate'],
+        [50000/10, 50000, 0.0001, 0.001, 0.90, 5000, 25, 0.8, 'lower-sequence-threshold'],
+        [50000/10, 50000, 0.0001, 0.001, 0.90, 9000, 25, 0.8, 'higher-sequence-threshold'],
+        [50000/10, 50000, 0.0001, 0.001, 0.81, 7000, 25, 0.8, 'lower-training-ratio'],
+        [50000/10, 50000, 0.0001, 0.001, 0.99, 7000, 25, 0.8, 'higher-training-ratio'],
+        [50000/10, 50000, 0.0001, 0.001, 0.90, 7000, 25, 0.9, 'stricter-classification-bounds'],
+        [50000/10, 50000, 0.0001, 0.001, 0.90, 7000, 25, 0.6, 'looser-classification-bounds'],
+        [50000/10, 50000, 0.0001, 0.001, 0.90, 7000, 35, 0.8, 'wider-layer'],
+        [100000/20, 100000, 0.0001, 0.001, 0.90, 7000, 25, 0.8, 'higher-epochs'],
+        [200000/50, 200000, 0.0001, 0.001, 0.90, 7000, 25, 0.8, 'highest-epochs']
+    ]
 
 
-    # experiment2 = create_experiment('v2', [np.floor(500/10), 500, 0.001, 0.001, 0.95, 5500, 25, 0.2, 0.8])
-    # run_experiment(APTitude, experiment2, 'v2')
+    i = 0
+    while i < len(experiments):
+        experiment_data = create_experiment(experiments[i], i)
+        acc_ratio, acc_range = run_experiment(APTitude, experiment_data)
+        i += 1
+
     # MAIN END
 
 
