@@ -48,13 +48,13 @@ Feel free to ask me questions on GitHub [Ashley](https://github.com/ashleystephe
 
 <br/>
 <p align="center">
-  <img width='600' src='https://github.com/ashleystephenson/APTitude/blob/master/out/v1/aptitude-model-cost-plot.png' alt='Classification Test'/>
+  <img width='600' src='https://github.com/ashleystephenson/APTitude/blob/master/out/v13-highest-epochs/aptitude-model-cost-plot.png' alt='Classification Test'/>
 </p>
 <p align="center">
-  <img width='600' src='https://github.com/ashleystephenson/APTitude/blob/master/out/v1/aptitude-model-error-plot.png' alt='Classification Test'/>
+  <img width='600' src='https://github.com/ashleystephenson/APTitude/blob/master/out/v13-highest-epochs/aptitude-model-error-plot.png' alt='Classification Test'/>
 </p>
 <p align="center">
-  <img width='600' src='https://github.com/ashleystephenson/APTitude/blob/master/out/v1/aptitude-model-accuracy-plot.png' alt='Classification Test'/>
+  <img width='600' src='https://github.com/ashleystephenson/APTitude/blob/master/out/v13-highest-epochs/aptitude-model-accuracy-plot.png' alt='Classification Test'/>
 </p>
 <br/><br/>
 
